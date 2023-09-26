@@ -44,24 +44,3 @@ func Accumulate[T any](c <-chan T) chan []T {
 	}()
 	return out
 }
-
-// Generic interface that accepts any number
-type Number interface {
-	int | int8 | int16 | int32 | int64 | float32 | float64
-}
-
-// Min function that takes any number
-func Min[T Number](a, b T) T {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// Max function that takes any number
-func Max[T Number](a, b T) T {
-	if a < b {
-		return a
-	}
-	return b
-}
