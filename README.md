@@ -5,7 +5,7 @@ This is just a collection of functions I use to reduce the amount of go code I h
 ## Install
 
 ```
-go get github.com/danhab99/idk@1.0
+go get github.com/danhab99/idk@1.3
 ```
 
 ```go
@@ -22,8 +22,33 @@ import (
 | Check      | Insert a function call that returns a value and an error |
 | Check0     | Insert a function call that returns an error             |
 | Accumulate | Collect the content of an array                          |
-| Min        | Generic numeric min func                                 |
-| Max        | Generic numeric max func                                 |
+
+## Examples
+
+```go
+package main
+
+import (
+  . "github.com/danhab99/idk"
+  "os"
+)
+
+func main() {
+  fileContent := Check(os.ReadFile("/tmp/example.idk"))
+  Check0(os.Truncate("/tmp/example.idk", 1))
+
+  ints := make(chan int)
+
+  go func() {
+    defer close(ints)
+    for i := 0; i < 1e4; i++ {
+      ints <- i
+    }
+  }()
+
+  allInts := <-Accumulate(ints)
+}
+```
 
 #### Ok but why tho
 
