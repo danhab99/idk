@@ -9,8 +9,23 @@ func Check[T any](v T, err error) T {
 	return v
 }
 
+// Excatly like Check but one less character to type
+func Must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 // Does the if err != nil { panic (err) } for a function that returns an error
 func Check0(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+// Exactly like Check0 but one less character to type
+func Must0(err error) {
 	if err != nil {
 		panic(err)
 	}
