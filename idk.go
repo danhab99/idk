@@ -30,17 +30,3 @@ func Must0(err error) {
 		panic(err)
 	}
 }
-
-// Accumulates the content of a channel into an array
-func Accumulate[T any](c <-chan T) chan []T {
-	out := make(chan []T)
-	go func() {
-		defer close(out)
-		var a []T
-		for e := range c {
-			a = append(a, e)
-		}
-		out <- a
-	}()
-	return out
-}
