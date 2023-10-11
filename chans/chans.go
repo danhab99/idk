@@ -77,27 +77,24 @@ func Merge[T any](chans ...<-chan T) chan T {
 	return out
 }
 
-// Splits the output of one channel into 2 different channels
-func Split[T any](c <-chan T) (left, right chan T) {
-	left = make(chan T)
-	right = make(chan T)
-
+// Splits the output of one channel into multiple channels, guarentees
+func Split[T any](c <-chan T, outs ...chan<- T) {
 	go func() {
-		defer close(left)
-		defer close(right)
-
-		dir := true
-		for x := range c {
-			if dir {
-				left <- x
-			} else {
-				right <- x
+		defer func() {
+			for _, e := range outs {
+				close(e)
 			}
-			dir = !dir
+		}()
+
+		for _, o := range outs {
+			x, ok := <-c
+			if !ok {
+				return
+			}
+
+			o <- x
 		}
 	}()
-
-	return
 }
 
 // Given a channel (buffered, but not required) that you expect to send items in bursts, you get a channel that constantly outputs content until the input channel closes or until it goes quiet.
@@ -119,6 +116,44 @@ func Burst[T any](c <-chan T) (out chan T) {
 				return
 			}
 		}
+	}()
+
+	return
+}
+
+// Broadcasts a message to a list of channe. If aggresive is set to true all output channels are guarenteed to receive every item sent, otherwise it will do its best
+func Broadcast[T any](c <-chan T, aggresive bool, outs ...chan<- T) {
+	go func() {
+		defer func() {
+			for _, e := range outs {
+				close(e)
+			}
+		}()
+
+		for x := range c {
+			for _, o := range outs {
+				if aggresive {
+					o <- x
+				} else {
+					select {
+					case o <- x:
+					default:
+					}
+				}
+			}
+		}
+	}()
+}
+
+// Runs a function in a goroutine and returns the result type and error as channels, saves the boiler plate
+func Fork[T any](handler func() (T, error)) (out chan T, e chan error) {
+	out = make(chan T)
+	e = make(chan error)
+
+	go func() {
+		x, err := handler()
+		e <- err
+		out <- x
 	}()
 
 	return
