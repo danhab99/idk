@@ -127,6 +127,8 @@ func Fork[T any](handler func() (T, error)) (out chan T, e chan error) {
 	e = make(chan error)
 
 	go func() {
+		defer close(e)
+		defer close(out)
 		x, err := handler()
 		e <- err
 		out <- x
