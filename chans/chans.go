@@ -97,30 +97,6 @@ func Split[T any](c <-chan T, outs ...chan<- T) {
 	}()
 }
 
-// Given a channel (buffered, but not required) that you expect to send items in bursts, you get a channel that constantly outputs content until the input channel closes or until it goes quiet.
-func Burst[T any](c <-chan T) (out chan T) {
-	out = make(chan T)
-
-	go func() {
-		defer close(out)
-
-		for {
-			select {
-			case x, ok := <-c:
-				if ok {
-					out <- x
-				} else {
-					return
-				}
-			default:
-				return
-			}
-		}
-	}()
-
-	return
-}
-
 // Broadcasts a message to a list of channe. If aggresive is set to true all output channels are guarenteed to receive every item sent, otherwise it will do its best
 func Broadcast[T any](c <-chan T, aggresive bool, outs ...chan<- T) {
 	go func() {
