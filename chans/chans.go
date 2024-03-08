@@ -70,7 +70,7 @@ func Merge[T any](chans ...<-chan T) chan T {
 	}
 
 	go func() {
-		wg.Done()
+		wg.Wait()
 		close(out)
 	}()
 
@@ -86,13 +86,13 @@ func Split[T any](c <-chan T, outs ...chan<- T) {
 			}
 		}()
 
-		for _, o := range outs {
-			x, ok := <-c
-			if !ok {
-				return
+		cur := 0
+		for i := range c {
+			outs[cur] <- i
+			cur++
+			if cur >= len(outs)-1 {
+				cur = 0
 			}
-
-			o <- x
 		}
 	}()
 }
