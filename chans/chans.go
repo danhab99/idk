@@ -1,6 +1,7 @@
 package chans
 
 import (
+	"container/list"
 	"sync"
 )
 
@@ -132,6 +133,56 @@ func Fork[T any](handler func() (T, error)) (out chan T, e chan error) {
 		x, err := handler()
 		e <- err
 		out <- x
+	}()
+
+	return
+}
+
+func GiantChan[T any](in <-chan T, out chan<- T, limit uint64) (count *uint64) {
+	l := list.New()
+	give := sync.NewCond(&sync.Mutex{})
+	take := sync.NewCond(&sync.Mutex{})
+	open := true
+	count = new(uint64)
+	*count = 0
+
+	give.L.Lock()
+
+	go func() {
+		defer func() { open = false }()
+
+		for i := range in {
+			*count++
+			if *count > limit {
+				take.Wait()
+			}
+			l.PushBack(i)
+			give.Broadcast()
+		}
+	}()
+
+	go func() {
+		give.Wait()
+		e := l.Front()
+
+		for {
+			if !open {
+				break
+			}
+			if *count == 0 {
+				give.Wait()
+			}
+
+			out <- e.Value.(T)
+
+			e = e.Next()
+			if e == nil {
+				continue
+			}
+
+			take.Broadcast()
+			*count--
+		}
 	}()
 
 	return
