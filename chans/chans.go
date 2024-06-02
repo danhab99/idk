@@ -19,40 +19,6 @@ func Accumulate[T any](c <-chan T) chan []T {
 	return out
 }
 
-type SortItem[T any] struct {
-	Value T
-	Index int
-}
-
-// Buffers items from a channel into memory and ensures that the items are sent in order. If limit > 0 and too many items were buffered than the next item will leak into the overflow channel.
-func Sort[T any](c <-chan SortItem[T], limit int) (out chan T, overflow chan SortItem[T]) {
-	out = make(chan T)
-	overflow = make(chan SortItem[T])
-
-	go func() {
-		defer close(out)
-		defer close(overflow)
-
-		buff := make(map[int]T)
-		count := 0
-
-		for x := range c {
-			if limit > 0 && len(buff) > limit {
-				overflow <- x
-				continue
-			}
-
-			buff[x.Index] = x.Value
-
-			for buf, ok := buff[count]; ok; {
-				out <- buf
-				count++
-			}
-		}
-	}()
-	return
-}
-
 // Merges multiple channels into one channel
 func Merge[T any](chans ...<-chan T) chan T {
 	var wg sync.WaitGroup
@@ -91,7 +57,7 @@ func Split[T any](c <-chan T, outs ...chan<- T) {
 		for i := range c {
 			outs[cur] <- i
 			cur++
-			if cur >= len(outs)-1 {
+			if cur > len(outs)-1 {
 				cur = 0
 			}
 		}
